@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { PredictButton } from "@/components/PredictButton";
 
 export const metadata: Metadata = {
   title: "世界杯赛事预测",
@@ -27,10 +28,14 @@ export default function RootLayout({
               <Link href="/review" className="hover:underline">
                 预测复盘
               </Link>
-              <Link href="/logs" className="ml-auto hover:underline">
+              <Link href="/logs" className="hover:underline">
                 日志
               </Link>
             </nav>
+            <PredictButton
+              label="🔮 一键预测"
+              className="rounded border border-white/40 px-3 py-1 text-sm hover:bg-white/10 disabled:opacity-50"
+            />
           </div>
         </header>
         <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>

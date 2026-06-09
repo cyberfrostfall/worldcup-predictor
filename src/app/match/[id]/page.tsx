@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getMatch, getPrediction } from "@/lib/db";
 import { TeamBadge } from "@/components/TeamBadge";
 import { PredictionBar } from "@/components/PredictionBar";
+import { PredictButton } from "@/components/PredictButton";
 import type { Winner } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +71,10 @@ export default async function MatchPage({
 
       {/* 预测区 */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h3 className="mb-4 font-bold">大模型预测</h3>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="font-bold">大模型预测</h3>
+          {!finished && !prediction && <PredictButton matchId={match.id} />}
+        </div>
         {prediction ? (
           <div className="space-y-4">
             <PredictionBar p={prediction} />
@@ -109,11 +113,9 @@ export default async function MatchPage({
           </div>
         ) : (
           <p className="text-sm text-gray-500">
-            暂无预测。访问{" "}
-            <code className="rounded bg-gray-100 px-1">
-              /api/predict?matchId={match.id}
-            </code>{" "}
-            生成。
+            {finished
+              ? "本场未在赛前生成预测。"
+              : "暂无预测，点击上方「手动预测」按钮生成。"}
           </p>
         )}
       </div>
