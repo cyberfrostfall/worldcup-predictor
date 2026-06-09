@@ -152,14 +152,31 @@ export function getMatch(id: number): Match | null {
 
 // ── predictions ──────────────────────────────────────
 
-export function savePrediction(p: Prediction): void {
+/**
+ * 落库预测。
+ *   默认（overwrite=false）：已存在则不覆盖，保证「每场只赛前预测一次」。
+ *   overwrite=true：用于改了评判规则后的强制重算，覆盖旧预测。
+ */
+export function savePrediction(p: Prediction, overwrite = false): void {
+  const conflict = overwrite
+    ? `ON CONFLICT(match_id) DO UPDATE SET
+         prob_home        = excluded.prob_home,
+         prob_draw        = excluded.prob_draw,
+         prob_away        = excluded.prob_away,
+         predicted_winner = excluded.predicted_winner,
+         predicted_score  = excluded.predicted_score,
+         analysis         = excluded.analysis,
+         model            = excluded.model,
+         created_at       = excluded.created_at`
+    : `ON CONFLICT(match_id) DO NOTHING`;
+
   getDb()
     .prepare(`
       INSERT INTO predictions
         (match_id, prob_home, prob_draw, prob_away, predicted_winner, predicted_score, analysis, model, created_at)
       VALUES
         (@matchId, @probHome, @probDraw, @probAway, @predictedWinner, @predictedScore, @analysis, @model, @createdAt)
-      ON CONFLICT(match_id) DO NOTHING
+      ${conflict}
     `)
     .run(p);
 }

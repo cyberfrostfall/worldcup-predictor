@@ -26,6 +26,8 @@ export default async function MatchPage({
 
   const prediction = getPrediction(match.id);
   const finished = match.status === "FINISHED";
+  // 仅未开赛可（重新）预测，与 /api/predict 守卫一致
+  const upcoming = match.status === "SCHEDULED" || match.status === "TIMED";
 
   // 复盘：预测是否命中
   const hit =
@@ -73,7 +75,17 @@ export default async function MatchPage({
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h3 className="font-bold">大模型预测</h3>
-          {!finished && !prediction && <PredictButton matchId={match.id} />}
+          {upcoming &&
+            (prediction ? (
+              <PredictButton
+                matchId={match.id}
+                force
+                label="🔄 重新预测"
+                confirmText="将用当前规则重新预测本场，并覆盖旧预测。确定继续？"
+              />
+            ) : (
+              <PredictButton matchId={match.id} />
+            ))}
         </div>
         {prediction ? (
           <div className="space-y-4">

@@ -33,7 +33,9 @@ export default function RootLayout({
               </Link>
             </nav>
             <PredictButton
-              label="🔮 一键预测"
+              label="🔮 一键重测"
+              force
+              confirmText="将用当前规则重新预测所有未开赛的比赛，并覆盖它们的旧预测（已完赛的不受影响）。确定继续？"
               className="rounded border border-white/40 px-3 py-1 text-sm hover:bg-white/10 disabled:opacity-50"
             />
           </div>
