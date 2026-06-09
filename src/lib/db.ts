@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
-import type { Match, Prediction, LogEntry } from "./types";
+import type { Match, Prediction, LogEntry, StandingRow } from "./types";
 
 const DB_DIR = path.join(process.cwd(), "src", "data");
 const DB_PATH = path.join(DB_DIR, "worldcup.db");
@@ -52,6 +52,23 @@ function getDb(): Database.Database {
       message TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_logs_id ON logs(id DESC);
+
+    CREATE TABLE IF NOT EXISTS standings (
+      competition     TEXT NOT NULL,
+      "group"         TEXT NOT NULL,
+      position        INTEGER NOT NULL,
+      team_name       TEXT NOT NULL,
+      played_games    INTEGER,
+      won             INTEGER,
+      draw            INTEGER,
+      lost            INTEGER,
+      goals_for       INTEGER,
+      goals_against   INTEGER,
+      goal_difference INTEGER,
+      points          INTEGER,
+      form            TEXT,
+      PRIMARY KEY (competition, "group", team_name)
+    );
   `);
 
   _db = db;
@@ -205,4 +222,73 @@ export function getLogs(limit = 200): LogEntry[] {
   return getDb()
     .prepare(`SELECT * FROM logs ORDER BY id DESC LIMIT ?`)
     .all(limit) as LogEntry[];
+}
+
+// ── standings ────────────────────────────────────────
+
+/** 全量替换某项赛事的积分榜（先删后插，避免残留旧行） */
+export function replaceStandings(
+  competition: string,
+  rows: StandingRow[]
+): number {
+  const db = getDb();
+  const insert = db.prepare(`
+    INSERT INTO standings
+      (competition, "group", position, team_name, played_games, won, draw, lost,
+       goals_for, goals_against, goal_difference, points, form)
+    VALUES
+      (@competition, @group, @position, @teamName, @playedGames, @won, @draw, @lost,
+       @goalsFor, @goalsAgainst, @goalDifference, @points, @form)
+  `);
+  const tx = db.transaction((list: StandingRow[]) => {
+    db.prepare(`DELETE FROM standings WHERE competition = ?`).run(competition);
+    for (const r of list) insert.run({ ...r, competition });
+  });
+  tx(rows);
+  return rows.length;
+}
+
+interface StandingDbRow {
+  competition: string;
+  group: string;
+  position: number;
+  team_name: string;
+  played_games: number;
+  won: number;
+  draw: number;
+  lost: number;
+  goals_for: number;
+  goals_against: number;
+  goal_difference: number;
+  points: number;
+  form: string | null;
+}
+
+function rowToStanding(r: StandingDbRow): StandingRow {
+  return {
+    group: r.group,
+    position: r.position,
+    teamName: r.team_name,
+    playedGames: r.played_games,
+    won: r.won,
+    draw: r.draw,
+    lost: r.lost,
+    goalsFor: r.goals_for,
+    goalsAgainst: r.goals_against,
+    goalDifference: r.goal_difference,
+    points: r.points,
+    form: r.form,
+  };
+}
+
+export function getStandingForTeam(
+  teamName: string,
+  competition = "WC"
+): StandingRow | null {
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM standings WHERE competition = ? AND team_name = ?`
+    )
+    .get(competition, teamName) as StandingDbRow | undefined;
+  return row ? rowToStanding(row) : null;
 }

@@ -1,4 +1,4 @@
-import type { Match, MatchStatus, Winner } from "./types";
+import type { Match, MatchStatus, Winner, StandingRow } from "./types";
 
 const BASE = "https://api.football-data.org/v4";
 
@@ -72,4 +72,72 @@ export async function fetchMatches(
 
   const data = (await res.json()) as ApiResponse;
   return data.matches.map((m) => mapMatch(m, competitionCode));
+}
+
+// ── 积分榜 ───────────────────────────────────────────
+
+interface ApiStandingRow {
+  position: number;
+  team: { name: string };
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  form: string | null;
+}
+
+interface ApiStanding {
+  stage: string;
+  type: "TOTAL" | "HOME" | "AWAY";
+  group: string | null;
+  table: ApiStandingRow[];
+}
+
+interface ApiStandingsResponse {
+  standings: ApiStanding[];
+}
+
+/** 拉取赛事积分榜（每个小组一组，只取 TOTAL 且分组非空，避免重复） */
+export async function fetchStandings(
+  competitionCode = process.env.COMPETITION_CODE ?? "WC"
+): Promise<StandingRow[]> {
+  const token = process.env.FOOTBALL_DATA_API_KEY;
+  if (!token) throw new Error("缺少环境变量 FOOTBALL_DATA_API_KEY");
+
+  const res = await fetch(`${BASE}/competitions/${competitionCode}/standings`, {
+    headers: { "X-Auth-Token": token },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`积分榜请求失败 ${res.status}: ${body}`);
+  }
+
+  const data = (await res.json()) as ApiStandingsResponse;
+  const rows: StandingRow[] = [];
+  for (const s of data.standings) {
+    if (s.type !== "TOTAL" || !s.group) continue;
+    for (const r of s.table) {
+      rows.push({
+        group: s.group,
+        position: r.position,
+        teamName: r.team.name,
+        playedGames: r.playedGames,
+        won: r.won,
+        draw: r.draw,
+        lost: r.lost,
+        goalsFor: r.goalsFor,
+        goalsAgainst: r.goalsAgainst,
+        goalDifference: r.goalDifference,
+        points: r.points,
+        form: r.form,
+      });
+    }
+  }
+  return rows;
 }

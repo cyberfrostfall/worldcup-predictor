@@ -38,6 +38,45 @@ export interface Prediction {
   createdAt: string;
 }
 
+// FIFA 排名（内置静态表）
+export interface FifaRank {
+  rank: number;
+  points: number;
+}
+export type FifaRankTable = Record<string, FifaRank>;
+
+// 小组积分榜的一行
+export interface StandingRow {
+  group: string;
+  position: number;
+  teamName: string;
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  form: string | null;    // 如 "W,W,D,L,W"
+}
+
+// Elo 评分
+export interface EloRating {
+  team: string;
+  rating: number;
+  games: number;
+}
+
+// Elo 算出的统计基线概率
+export interface EloBaseline {
+  home: number;
+  draw: number;
+  away: number;
+  homeElo: number;
+  awayElo: number;
+}
+
 // 组装给 LLM 的赛前数据
 export interface PreMatchContext {
   homeTeam: string;
@@ -48,6 +87,12 @@ export interface PreMatchContext {
   homeRecent: string[];   // 近期战绩描述，如 ["W 2-0 vs X", ...]
   awayRecent: string[];
   headToHead: string[];   // 历史交锋描述
+  // 增强依据（可选，缺失时不影响预测）
+  homeFifa?: FifaRank | null;
+  awayFifa?: FifaRank | null;
+  homeStanding?: StandingRow | null;
+  awayStanding?: StandingRow | null;
+  eloBaseline?: EloBaseline | null;
 }
 
 // 应用业务日志（同步、预测等关键操作）
