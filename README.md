@@ -82,6 +82,33 @@ LLM_MODEL=your-local-model
 - 喂给模型的是**结构化赛前数据**（两队近期战绩、历史交锋），而非凭空判断；模型输出概率与解读，并归一化概率。
 - 赛前数据从已同步的历史比赛中提取，不额外消耗 API 额度。
 
+## 在 Linux 服务器/VM 上常驻运行 + 自动更新（推荐）
+
+项目自带一键部署脚本（systemd 常驻 + cron 定时同步预测）：
+
+```bash
+cd /opt/worldcup-predictor   # 你的项目目录
+git pull                     # 拉取最新代码
+sudo bash deploy/install.sh
+```
+
+脚本会自动：
+1. `npm install` + `npm run build`（生产构建）
+2. 注册 systemd 服务 `worldcup.service`：开机自启、崩溃自动重启、常驻 `0.0.0.0:3000`
+3. 注册 cron（`/etc/cron.d/worldcup`）：每小时同步赛果、每半小时为新比赛补预测
+
+常用命令：
+
+```bash
+systemctl status worldcup.service      # 查看运行状态
+journalctl -u worldcup.service -f      # 实时日志
+systemctl restart worldcup.service     # 重启（改代码 git pull + npm run build 后）
+```
+
+> 自动化靠 cron 定时调用本机 HTTP 接口（`localhost:3000/api/sync`、`/api/predict`），
+> 与常驻服务同进程读写同一 SQLite，页面实时反映最新数据。
+> 代码更新后需重新 `npm run build` 再 `systemctl restart`。
+
 ## 部署到 Vercel（可选）
 
 `vercel.json` 已配置 Cron 每小时同步、每半小时补预测。

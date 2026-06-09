@@ -1,0 +1,19 @@
+[Unit]
+Description=World Cup Predictor (Next.js)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# 下面这些占位符由 install.sh 自动替换
+User=__USER__
+WorkingDirectory=__WORKDIR__
+ExecStart=__NPM__ run start
+Restart=on-failure
+RestartSec=5
+# 生产模式监听 0.0.0.0:3000（package.json 的 start 脚本已带 -H 0.0.0.0）
+Environment=NODE_ENV=production
+Environment=PATH=__PATH__
+
+[Install]
+WantedBy=multi-user.target
