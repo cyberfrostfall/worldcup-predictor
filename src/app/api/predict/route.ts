@@ -28,15 +28,20 @@ export async function GET(req: NextRequest) {
       if (getPrediction(match.id)) {
         return NextResponse.json({ ok: true, skipped: "已有预测" });
       }
+      if (match.homeTeam === "待定" || match.awayTeam === "待定") {
+        return NextResponse.json({ ok: true, skipped: "对阵未定" });
+      }
       const pred = await predictMatch(match);
       savePrediction(pred);
       return NextResponse.json({ ok: true, prediction: pred });
     }
 
-    // 批量：未开赛 + 无预测
+    // 批量：未开赛 + 无预测 + 对阵已确定（排除抽签前的"待定"占位）
     const pending = getMatches().filter(
       (m) =>
         (m.status === "SCHEDULED" || m.status === "TIMED") &&
+        m.homeTeam !== "待定" &&
+        m.awayTeam !== "待定" &&
         !getPrediction(m.id)
     );
 

@@ -10,8 +10,9 @@ interface ApiMatch {
   group: string | null;
   utcDate: string;
   status: MatchStatus;
-  homeTeam: { name: string; crest?: string | null };
-  awayTeam: { name: string; crest?: string | null };
+  // 对阵未定时(如世界杯抽签前)，name 可能为 null
+  homeTeam: { name: string | null; crest?: string | null };
+  awayTeam: { name: string | null; crest?: string | null };
   score: {
     winner: Winner;
     fullTime: { home: number | null; away: number | null };
@@ -38,8 +39,9 @@ function mapMatch(m: ApiMatch, competitionCode: string): Match {
     competition: m.competition?.code ?? competitionCode,
     stage: STAGE_ZH[m.stage] ?? m.stage,
     group: m.group,
-    homeTeam: m.homeTeam.name,
-    awayTeam: m.awayTeam.name,
+    // 对阵未定(抽签前)时用占位名，保证可入库与展示
+    homeTeam: m.homeTeam.name ?? "待定",
+    awayTeam: m.awayTeam.name ?? "待定",
     homeCrest: m.homeTeam.crest ?? null,
     awayCrest: m.awayTeam.crest ?? null,
     utcDate: m.utcDate,
