@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getMatch, getMatches, getPrediction, savePrediction } from "@/lib/db";
 import { predictMatch } from "@/lib/prediction";
 import { isAuthorized } from "@/lib/auth";
+import { logInfo, logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
       }
       const pred = await predictMatch(match);
       savePrediction(pred);
+      logInfo("predict", `预测完成：${match.homeTeam} vs ${match.awayTeam}`);
       return NextResponse.json({ ok: true, prediction: pred });
     }
 
@@ -51,9 +53,11 @@ export async function GET(req: NextRequest) {
       savePrediction(pred);
       results.push(m.id);
     }
+    logInfo("predict", `批量预测完成，共 ${results.length} 场`);
     return NextResponse.json({ ok: true, predicted: results });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    logError("predict", `预测失败：${msg}`);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

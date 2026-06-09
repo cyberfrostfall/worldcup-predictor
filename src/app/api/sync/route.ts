@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchMatches } from "@/lib/football-api";
 import { upsertMatches } from "@/lib/db";
 import { isAuthorized } from "@/lib/auth";
+import { logInfo, logError } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,11 @@ export async function GET(req: NextRequest) {
   try {
     const matches = await fetchMatches();
     const count = upsertMatches(matches);
+    logInfo("sync", `同步成功，共 ${count} 场`);
     return NextResponse.json({ ok: true, synced: count });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
+    logError("sync", `同步失败：${msg}`);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

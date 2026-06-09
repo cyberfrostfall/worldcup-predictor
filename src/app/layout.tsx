@@ -20,12 +20,15 @@ export default function RootLayout({
             <Link href="/" className="text-lg font-bold">
               ⚽ 世界杯预测
             </Link>
-            <nav className="flex gap-4 text-sm">
+            <nav className="flex flex-1 gap-4 text-sm">
               <Link href="/" className="hover:underline">
                 赛程
               </Link>
               <Link href="/review" className="hover:underline">
                 预测复盘
+              </Link>
+              <Link href="/logs" className="ml-auto hover:underline">
+                日志
               </Link>
             </nav>
           </div>

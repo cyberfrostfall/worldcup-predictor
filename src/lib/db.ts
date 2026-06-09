@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
-import type { Match, Prediction } from "./types";
+import type { Match, Prediction, LogEntry } from "./types";
 
 const DB_DIR = path.join(process.cwd(), "src", "data");
 const DB_PATH = path.join(DB_DIR, "worldcup.db");
@@ -43,6 +43,15 @@ function getDb(): Database.Database {
       model            TEXT NOT NULL,
       created_at       TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS logs (
+      id      INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts      TEXT NOT NULL,
+      level   TEXT NOT NULL,
+      source  TEXT NOT NULL,
+      message TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_logs_id ON logs(id DESC);
   `);
 
   _db = db;
@@ -176,4 +185,24 @@ export function getAllPredictions(): Prediction[] {
     .prepare(`SELECT * FROM predictions`)
     .all() as PredictionRow[];
   return rows.map(rowToPrediction);
+}
+
+// ── logs ─────────────────────────────────────────────
+
+export function addLog(
+  level: LogEntry["level"],
+  source: string,
+  message: string
+): void {
+  getDb()
+    .prepare(
+      `INSERT INTO logs (ts, level, source, message) VALUES (?, ?, ?, ?)`
+    )
+    .run(new Date().toISOString(), level, source, message);
+}
+
+export function getLogs(limit = 200): LogEntry[] {
+  return getDb()
+    .prepare(`SELECT * FROM logs ORDER BY id DESC LIMIT ?`)
+    .all(limit) as LogEntry[];
 }

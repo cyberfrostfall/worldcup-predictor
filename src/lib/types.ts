@@ -49,3 +49,12 @@ export interface PreMatchContext {
   awayRecent: string[];
   headToHead: string[];   // 历史交锋描述
 }
+
+// 应用业务日志（同步、预测等关键操作）
+export interface LogEntry {
+  id: number;
+  ts: string;             // ISO 时间
+  level: "info" | "warn" | "error";
+  source: string;         // sync | predict
+  message: string;
+}
